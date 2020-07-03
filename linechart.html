@@ -1,0 +1,120 @@
+<html>
+  <head>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+   <link rel="stylesheet" media="screen" href="https://fontlibrary.org/face/metropolis" type="text/css"/>
+   <style>
+   .toolTip {
+     position: absolute;
+     max-width: 150px;
+     font-family: 'MetropolisSemiBold', sans-serif;
+     margin-right: 5px;
+     font-size: 14px;
+     background-color: white;
+     opacity: 0.9;
+     padding: 5px;
+   }
+   </style>
+  </head>
+  <body>
+    <svg id="svg"></svg>
+
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+const marginLeft = 20;
+const marginRight = 150;
+const marginTop = 50;
+const marginBottom = 20;
+const width = window.innerWidth - marginLeft - marginRight - 50;
+const height = 200 - marginTop - marginBottom;
+
+const svg = d3.select("#svg")
+    .attr("width", width + marginLeft + marginRight)
+    .attr("height", height + marginTop + marginBottom)
+    .attr("class", "bar-chart");
+
+    var toolTip = d3.select("body")
+      .append("div")
+      .attr("class", "toolTip")
+      .style("display", "none")
+      .html("empty")
+      ;
+
+      d3.csv("https://raw.githubusercontent.com/idaflik/data/master/deadly%20shootings.csv",function(data){
+
+        data.forEach(function(d){
+          d.year = +d.year;
+          d.number = +d.number;
+          });
+
+          console.log(data);
+
+          const xScale = d3.scaleLinear()
+              .range([0, width])
+              .domain([d3.min(data, function(d) { return d.year; }), d3.max(data, function(d) { return d.year; })])
+              ;
+
+          const yScale = d3.scaleLinear()
+              .range([height, 0])
+              .domain([0, d3.max(data, function(d) { return d.number; })])
+              ;
+
+          const chart = svg.append('g')
+              .attr('transform', `translate(${marginLeft}, ${marginTop})`)
+              ;
+
+          var format = d3.format("");
+          var noCommas = d3.format(".0f");
+          var tickNumber = window.innerWidth / 40;
+
+          chart.append('g')
+              // .attr("class", "white")
+              .call(d3.axisLeft(yScale).tickFormat(noCommas).ticks(6))
+              .append("text")
+              ;
+
+          chart.append('g')
+              // .attr("class", "white")
+              .attr('transform', `translate(0, ${height})`)
+              .call(d3.axisBottom(xScale).tickFormat(format).ticks(tickNumber));
+
+
+          chart.append("path")
+          .attr("class", "linechart")
+          .datum(data)
+          .attr("fill", "none")
+          .attr("stroke", "#fb9446")
+          .attr("stroke-width", 2)
+          .attr("d", d3.line()
+            .x(function(d) { return xScale(d.year) })
+            .y(function(d) { return yScale(d.number) })
+          );
+
+
+          var barWidth = width / data.length;
+
+
+          chart.selectAll(".bar")
+                 .data(data)
+                 .enter().append("rect")
+                 .attr("opacity", "0")
+                 .attr("x", function(d) { return xScale(d.year) - (barWidth / 2) } )
+                 .attr("y", function(d) { return yScale(d.number + 1) })
+                 .attr("width", barWidth)
+                 .attr("height", function(d) { return height - yScale(d.number  + 1 )})
+                 .on("mousemove", function(d){
+                           toolTip
+                             .style("left", d3.event.pageX + "px")
+                             .style("top", d3.event.pageY + "px")
+                             .style("display", "inline-block")
+                             .html("Year: " + (d.year)+ "<br>" + "Deadly shootings: " + (d.number));
+                       })
+                 .on("mouseout", function(d){ toolTip.style("display", "none")})
+                 ;
+
+           });
+
+</script>
+</body>
+</html>
